@@ -1,1 +1,439 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
+#define MAX_PRODUCTS 100
+#define MAX_NAME_LENGTH 50
+#define MAX_CUSTOMERS 100
+#define MAX_HISTORY_LENGTH 3
+
+typedef enum {
+    PETITE,
+    MOYENNE,
+    GRANDE
+} Taille;
+
+typedef struct {
+    char nom[MAX_NAME_LENGTH];
+    int numeroReference;
+    int quantiteEnStock;
+    float prix;
+    Taille taille;
+} Produit;
+
+typedef struct {
+    char nom[MAX_NAME_LENGTH];
+    char prenom[MAX_NAME_LENGTH];
+    int historiqueAchats[MAX_HISTORY_LENGTH];
+    int longueurHistorique;
+} Client;
+
+Produit produits[MAX_PRODUCTS];
+int nombreProduits = 0;
+
+Client clients[MAX_CUSTOMERS];
+int nombreClients = 0;
+
+void afficherProduitsFaibleStock() {
+    printf("Produits à faible stock :\n");
+    int i;
+    for (i = 0; i < nombreProduits; i++) {
+        if (produits[i].quantiteEnStock <= 5 && produits[i].quantiteEnStock > 0) {
+            printf("Nom : %s, Référence : %d, Quantité : %d\n",
+                   produits[i].nom, produits[i].numeroReference, produits[i].quantiteEnStock);
+        }
+    }
+    printf("\n");
+}
+
+void afficherProduitsStockEpuise() {
+    printf("Produits en rupture de stock :\n");
+    int i;
+    for (i = 0; i < nombreProduits; i++) {
+        if (produits[i].quantiteEnStock == 0) {
+            printf("Nom : %s, Référence : %d\n",
+                   produits[i].nom, produits[i].numeroReference);
+        }
+    }
+    printf("\n");
+}
+
+void afficherEspaceRestant() {
+    int compteurPetite = 0, compteurMoyenne = 0, compteurGrande = 0;
+    int i;
+    for (i = 0; i < nombreProduits; i++) {
+        if (produits[i].quantiteEnStock > 0) {
+            switch (produits[i].taille) {
+                case PETITE:
+                    compteurPetite++;
+                    break;
+                case MOYENNE:
+                    compteurMoyenne++;
+                    break;
+                case GRANDE:
+                    compteurGrande++;
+                    break;
+            }
+        }
+    }
+
+    int espaceTotal = compteurPetite + (2 * compteurMoyenne) + (4 * compteurGrande);
+    printf("Espace restant dans le magasin :\n");
+    printf("Petite : %d, Moyenne : %d, Grande : %d\n", compteurPetite, compteurMoyenne, compteurGrande);
+    printf("Espace total : %d\n\n", espaceTotal);
+}
+
+void ajouterProduit(char *nom, int numeroReference, int quantite, float prix, Taille taille) {
+    if (nombreProduits >= MAX_PRODUCTS) {
+        printf("Capacité maximale de produits atteinte.\n");
+        return;
+    }
+
+    Produit nouveauProduit;
+    strncpy(nouveauProduit.nom, nom, MAX_NAME_LENGTH);
+    nouveauProduit.numeroReference = numeroReference;
+    nouveauProduit.quantiteEnStock = quantite;
+    nouveauProduit.prix = prix;
+    nouveauProduit.taille = taille;
+
+    produits[nombreProduits++] = nouveauProduit;
+}
+
+Produit *trouverProduitParNom(char *nom) {
+    int i;
+    for (i = 0; i < nombreProduits; i++) {
+        if (strcmp(produits[i].nom, nom) == 0) {
+            return &produits[i];
+        }
+    }
+    return NULL;
+}
+
+Produit *trouverProduitParReference(int numeroReference) {
+    int i;
+    for (i = 0; i < nombreProduits; i++) {
+        if (produits[i].numeroReference == numeroReference) {
+            return &produits[i];
+        }
+    }
+    return NULL;
+}
+
+void augmenterStock(Produit *produit, int quantite) {
+    if (produit == NULL) {
+        printf("Produit introuvable.\n");
+        return;
+    }
+
+    if (produit->quantiteEnStock + quantite > 0) {
+        produit->quantiteEnStock += quantite;
+        printf("Stock augmenté avec succès.\n");
+    } else {
+        printf("Quantité de stock invalide.\n");
+    }
+}
+
+void afficherHistoriqueAchats(Client *client) {
+    printf("Historique des achats :\n");
+    int i;
+    for (i = 0; i < client->longueurHistorique; i++) {
+        printf("Achat %d : %d\n", i + 1, client->historiqueAchats[i]);
+    }
+    printf("\n");
+}
+
+Client *trouverClientParNom(char *prenom, char *nom) {
+    int i;
+    for (i = 0; i < nombreClients; i++) {
+        if (strcmp(clients[i].prenom, prenom) == 0 && strcmp(clients[i].nom, nom) == 0) {
+            return &clients[i];
+        }
+    }
+    return NULL;
+}
+
+void ajouterClient(char *prenom, char *nom) {
+    if (nombreClients >= MAX_CUSTOMERS) {
+        printf("Capacité maximale de clients atteinte.\n");
+        return;
+    }
+
+    Client nouveauClient;
+    strncpy(nouveauClient.prenom, prenom, MAX_NAME_LENGTH);
+    strncpy(nouveauClient.nom, nom, MAX_NAME_LENGTH);
+    nouveauClient.longueurHistorique = 0;
+
+    clients[nombreClients++] = nouveauClient;
+
+    printf("Client ajouté avec succès.\n");
+
+    // Création du fichier de sauvegarde du client
+    char nomFichier[MAX_NAME_LENGTH * 2 + 5];  // Nom du fichier au format "prenom_nom.txt"
+    snprintf(nomFichier, sizeof(nomFichier), "%s_%s.txt", prenom, nom);
+
+    FILE *fichier = fopen(nomFichier, "w");
+    if (fichier != NULL) {
+        fprintf(fichier, "Prénom : %s\n", prenom);
+        fprintf(fichier, "Nom : %s\n", nom);
+        fclose(fichier);
+        printf("Fiche client sauvegardée avec succès.\n");
+    } else {
+        printf("Erreur lors de la création du fichier de sauvegarde.\n");
+    }
+}
+
+void supprimerClient(Client *client) {
+    int i;
+    for (i = 0; i < nombreClients; i++) {
+        if (&clients[i] == client) {
+            // Décaler le tableau clients vers la gauche
+            for (; i < nombreClients - 1; i++) {
+                clients[i] = clients[i + 1];
+            }
+            nombreClients--;
+            printf("Client supprimé avec succès.\n");
+            return;
+        }
+    }
+    printf("Client introuvable.\n");
+}
+
+void effectuerAchat(Client *client, Produit *produit, int quantite) {
+    if (produit == NULL) {
+        printf("Produit introuvable.\n");
+        return;
+    }
+
+    if (produit->quantiteEnStock >= quantite) {
+        float prixTotal = produit->prix * quantite;
+        printf("Produit(s) acheté(s) : %s, Quantité : %d, Prix unitaire : %.2f, Prix total : %.2f\n",
+               produit->nom, quantite, produit->prix, prixTotal);
+        produit->quantiteEnStock -= quantite;
+
+        if (client != NULL) {
+            if (client->longueurHistorique < MAX_HISTORY_LENGTH) {
+                client->historiqueAchats[client->longueurHistorique++] = produit->numeroReference;
+            } else {
+                // Décaler le tableau historique vers la gauche et ajouter le nouvel achat à la fin
+                int i;
+                for (i = 0; i < MAX_HISTORY_LENGTH - 1; i++) {
+                    client->historiqueAchats[i] = client->historiqueAchats[i + 1];
+                }
+                client->historiqueAchats[MAX_HISTORY_LENGTH - 1] = produit->numeroReference;
+            }
+        }
+    } else {
+        printf("Stock insuffisant pour l'achat de %d produit(s).\n", quantite);
+        printf("Veuillez sélectionner une quantité inférieure ou égale à %d.\n", produit->quantiteEnStock);
+    }
+}
+
+void gererStocksAleatoires() {
+    srand(time(NULL));
+    int i;
+    for (i = 0; i < nombreProduits; i++) {
+        int variation = rand() % 6 - 3; // Variation aléatoire entre -3 et 3
+        produits[i].quantiteEnStock += variation;
+        if (produits[i].quantiteEnStock < 0) {
+            produits[i].quantiteEnStock = 0;
+        }
+    }
+}
+
+int main() {
+    // Ajout des produits initiaux
+    ajouterProduit("Chaussure", 1, 5, 29.99, MOYENNE);
+    ajouterProduit("Pantalon", 2, 3, 39.99, GRANDE);
+    ajouterProduit("T-shirt", 3, 10, 19.99, PETITE);
+    ajouterProduit("Pull", 4, 2, 49.99, MOYENNE);
+    ajouterProduit("Manteau", 5, 0, 99.99, GRANDE);
+    ajouterProduit("Chapeau", 6, 1, 9.99, PETITE);
+
+    int mode;
+    printf("Bienvenue dans le Programme de Gestion de Magasin !\n");
+
+    while (1) {
+        printf("Veuillez sélectionner un mode :\n");
+        printf("1. Mode Gestion\n");
+        printf("2. Mode Achat\n");
+        printf("0. Quitter\n");
+        printf("Entrez votre choix : ");
+        scanf("%d", &mode);
+
+        switch (mode) {
+            case 1:
+                afficherProduitsFaibleStock();
+                afficherProduitsStockEpuise();
+                afficherEspaceRestant();
+
+                int choix;
+                printf("Mode Gestion :\n");
+                printf("1. Vérifier le stock d'un produit\n");
+                printf("2. Augmenter le stock d'un produit\n");
+                printf("3. Gérer les stocks de manière aléatoire\n");
+                printf("0. Quitter\n");
+                printf("Entrez votre choix : ");
+                scanf("%d", &choix);
+
+                switch (choix) {
+                    case 1:
+                        printf("Entrez le nom ou la référence du produit : ");
+                        char rechercheNom[MAX_NAME_LENGTH];
+                        int rechercheReference;
+                        scanf("%s", rechercheNom);
+
+                        if (sscanf(rechercheNom, "%d", &rechercheReference) == 1) {
+                            Produit *produitTrouve = trouverProduitParReference(rechercheReference);
+                            if (produitTrouve != NULL) {
+                                printf("Produit trouvé :\n");
+                                printf("Nom : %s, Référence : %d, Quantité : %d, Prix : %.2f, Taille : %d\n",
+                                       produitTrouve->nom, produitTrouve->numeroReference,
+                                       produitTrouve->quantiteEnStock, produitTrouve->prix, produitTrouve->taille);
+                            } else {
+                                printf("Produit introuvable.\n");
+                            }
+                        } else {
+                            Produit *produitTrouve = trouverProduitParNom(rechercheNom);
+                            if (produitTrouve != NULL) {
+                                printf("Produit trouvé :\n");
+                                printf("Nom : %s, Référence : %d, Quantité : %d, Prix : %.2f, Taille : %d\n",
+                                       produitTrouve->nom, produitTrouve->numeroReference,
+                                       produitTrouve->quantiteEnStock, produitTrouve->prix, produitTrouve->taille);
+                            } else {
+                                printf("Produit introuvable.\n");
+                            }
+                        }
+                        break;
+
+                    case 2:
+                        printf("Entrez le numéro de référence du produit : ");
+                        int refNumero;
+                        scanf("%d", &refNumero);
+                        printf("Entrez la quantité à augmenter : ");
+                        int quantite;
+                        scanf("%d", &quantite);
+                        Produit *produitAAugmenter = trouverProduitParReference(refNumero);
+                        augmenterStock(produitAAugmenter, quantite);
+                        break;
+
+                    case 3:
+                        gererStocksAleatoires();
+                        printf("Gestion des stocks effectuée de manière aléatoire.\n");
+                        break;
+
+                    case 0:
+                        break;
+
+                    default:
+                        printf("Choix invalide. Veuillez réessayer.\n");
+                        break;
+                }
+                break;
+
+            case 2:
+                printf("Mode Achat :\n");
+                printf("1. Vous avez déjà un compte\n");
+                printf("2. Vous êtes un nouveau client\n");
+                printf("0. Quitter\n");
+                printf("Entrez votre choix : ");
+                scanf("%d", &choix);
+
+                switch (choix) {
+                    case 1:
+                        printf("Entrez votre prénom : ");
+                        char prenom[MAX_NAME_LENGTH];
+                        scanf("%s", prenom);
+                        printf("Entrez votre nom : ");
+                        char nom[MAX_NAME_LENGTH];
+                        scanf("%s", nom);
+                        Client *clientExistant = trouverClientParNom(prenom, nom);
+                        if (clientExistant != NULL) {
+                            afficherHistoriqueAchats(clientExistant);
+                            printf("Entrez le nombre de produits à acheter : ");
+                            int nombreProduits;
+                            scanf("%d", &nombreProduits);
+
+                            float montantTotal = 0.0;
+                            int i;
+                            for (i = 0; i < nombreProduits; i++) {
+                                printf("Entrez le nom ou la référence du produit : ");
+                                char rechercheNom[MAX_NAME_LENGTH];
+                                int rechercheReference;
+                                scanf("%s", rechercheNom);
+
+                                if (sscanf(rechercheNom, "%d", &rechercheReference) == 1) {
+                                    Produit *produitTrouve = trouverProduitParReference(rechercheReference);
+                                    if (produitTrouve != NULL) {
+                                        printf("Entrez la quantité à acheter pour le produit %s : ", produitTrouve->nom);
+                                        int quantite;
+                                        scanf("%d", &quantite);
+                                        if (quantite <= produitTrouve->quantiteEnStock) {
+                                            effectuerAchat(clientExistant, produitTrouve, quantite);
+                                            montantTotal += produitTrouve->prix * quantite;
+                                        } else {
+                                            printf("Stock insuffisant pour l'achat de %d produit(s).\n", quantite);
+                                            printf("Il n'y en a plus en stock.\n");
+                                            i--;  // Permet de répéter la sélection du produit
+                                        }
+                                    } else {
+                                        printf("Produit introuvable.\n");
+                                        i--;  // Permet de répéter la sélection du produit
+                                    }
+                                } else {
+                                    Produit *produitTrouve = trouverProduitParNom(rechercheNom);
+                                    if (produitTrouve != NULL) {
+                                        printf("Entrez la quantité à acheter pour le produit %s : ", produitTrouve->nom);
+                                        int quantite;
+                                        scanf("%d", &quantite);
+                                        if (quantite <= produitTrouve->quantiteEnStock) {
+                                            effectuerAchat(clientExistant, produitTrouve, quantite);
+                                            montantTotal += produitTrouve->prix * quantite;
+                                        } else {
+                                            printf("Stock insuffisant pour l'achat de %d produit(s).\n", quantite);
+                                            printf("Il n'y en a plus en stock.\n");
+                                            i--;  // Permet de répéter la sélection du produit
+                                        }
+                                    } else {
+                                        printf("Produit introuvable.\n");
+                                        i--;  // Permet de répéter la sélection du produit
+                                    }
+                                }
+                            }
+
+                            printf("Montant total à payer : %.2f\n", montantTotal);
+                        } else {
+                            printf("Client introuvable.\n");
+                        }
+                        break;
+
+                    case 2:
+                        printf("Entrez votre prénom : ");
+                        char nouveauPrenom[MAX_NAME_LENGTH];
+                        scanf("%s", nouveauPrenom);
+                        printf("Entrez votre nom : ");
+                        char nouveauNom[MAX_NAME_LENGTH];
+                        scanf("%s", nouveauNom);
+                        ajouterClient(nouveauPrenom, nouveauNom);
+                        break;
+
+                    case 0:
+                        break;
+
+                    default:
+                        printf("Choix invalide. Veuillez réessayer.\n");
+                        break;
+                }
+                break;
+
+            case 0:
+                printf("Merci d'avoir utilisé le Programme de Gestion de Magasin. Au revoir !\n");
+                return 0;
+
+            default:
+                printf("Choix invalide. Veuillez réessayer.\n");
+                break;
+        }
+    }
+}
 
