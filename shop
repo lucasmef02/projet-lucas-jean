@@ -3,7 +3,7 @@
 #include <string.h>
 #include <time.h>
 
-#define MAX_PRODUCTS 100
+#define MAX_PRODUCTS 50
 #define MAX_NAME_LENGTH 50
 #define MAX_CUSTOMERS 100
 #define MAX_HISTORY_LENGTH 3
@@ -31,6 +31,12 @@ int nombreProduits = 0;
 Client clients[MAX_CUSTOMERS];
 int nombreClients = 0;
 
+float totalAchats = 0.0;  // Variable to store the total purchases
+
+int espacePetite = 0;
+int espaceMoyenne = 0;
+int espaceGrande = 0;
+
 void afficherProduitsFaibleStock() {
   printf("Produits à faible stock :\n");
   int i;
@@ -40,15 +46,15 @@ void afficherProduitsFaibleStock() {
           "Nom : %s, Référence : %d, Quantité : %d, Taille : ", produits[i].nom,
           produits[i].numeroReference, produits[i].quantiteEnStock);
       switch (produits[i].taille) {
-      case PETITE:
-        printf("Petite");
-        break;
-      case MOYENNE:
-        printf("Moyenne");
-        break;
-      case GRANDE:
-        printf("Grande");
-        break;
+        case PETITE:
+          printf("Petite");
+          break;
+        case MOYENNE:
+          printf("Moyenne");
+          break;
+        case GRANDE:
+          printf("Grande");
+          break;
       }
       printf("\n");
     }
@@ -64,15 +70,15 @@ void afficherProduitsStockEpuise() {
       printf("Nom : %s, Référence : %d, Taille : ", produits[i].nom,
              produits[i].numeroReference);
       switch (produits[i].taille) {
-      case PETITE:
-        printf("Petite");
-        break;
-      case MOYENNE:
-        printf("Moyenne");
-        break;
-      case GRANDE:
-        printf("Grande");
-        break;
+        case PETITE:
+          printf("Petite");
+          break;
+        case MOYENNE:
+          printf("Moyenne");
+          break;
+        case GRANDE:
+          printf("Grande");
+          break;
       }
       printf("\n");
     }
@@ -81,34 +87,19 @@ void afficherProduitsStockEpuise() {
 }
 
 void afficherEspaceRestant() {
-  int compteurPetite = 0, compteurMoyenne = 0, compteurGrande = 0;
-  int i;
-  for (i = 0; i < nombreProduits; i++) {
-    if (produits[i].quantiteEnStock > 0) {
-      switch (produits[i].taille) {
-      case PETITE:
-        compteurPetite++;
-        break;
-      case MOYENNE:
-        compteurMoyenne++;
-        break;
-      case GRANDE:
-        compteurGrande++;
-        break;
-      }
-    }
+  printf("Espace utilisé dans le magasin :\n");
+  printf("Petite : %d, Moyenne : %d, Grande : %d\n", espacePetite, espaceMoyenne, espaceGrande);
+  int espaceTotal = 50 - (espacePetite + (2 * espaceMoyenne) + (4 * espaceGrande));
+  if (espaceTotal >= 0 && espaceTotal <= 50) {
+    printf("Espace total restant dans le magasin : %d sur 50 disponibles\n", espaceTotal);
+  } else if (espaceTotal < 0) {
+    printf("Stock insuffisant");
+  } else if (espaceTotal > 50) {
+    printf("Stock demandé supérieur à la capacité disponible\n");
   }
-
-  int espaceTotal =
-      compteurPetite + (2 * compteurMoyenne) + (4 * compteurGrande);
-  printf("Espace restant dans le magasin :\n");
-  printf("Petite : %d, Moyenne : %d, Grande : %d\n", compteurPetite,
-         compteurMoyenne, compteurGrande);
-  printf("Espace total : %d\n\n", espaceTotal);
 }
 
-void ajouterProduit(char *nom, int numeroReference, int quantite, float prix,
-                    Taille taille) {
+void ajouterProduit(char *nom, int numeroReference, int quantite, float prix, Taille taille) {
   if (nombreProduits >= MAX_PRODUCTS) {
     printf("Capacité maximale de produits atteinte.\n");
     return;
@@ -120,6 +111,42 @@ void ajouterProduit(char *nom, int numeroReference, int quantite, float prix,
   nouveauProduit.quantiteEnStock = quantite;
   nouveauProduit.prix = prix;
   nouveauProduit.taille = taille;
+
+  int espaceRequis;
+  switch (taille) {
+    case PETITE:
+      espaceRequis = quantite;
+      espacePetite += quantite;
+      break;
+    case MOYENNE:
+      espaceRequis = 2 * quantite;
+      espaceMoyenne += quantite;
+      break;
+    case GRANDE:
+      espaceRequis = 4 * quantite;
+      espaceGrande += quantite;
+      break;
+    default:
+      printf("Taille de produit invalide.\n");
+      return;
+  }
+
+  int espaceTotal = 50 - (espacePetite + (2 * espaceMoyenne) + (4 * espaceGrande));
+  if (espaceTotal > MAX_PRODUCTS) {
+    printf("Impossible d'ajouter le produit. Capacité de stockage atteinte.\n");
+    switch (taille) {
+      case PETITE:
+        espacePetite += quantite;
+        break;
+      case MOYENNE:
+        espaceMoyenne += quantite;
+        break;
+      case GRANDE:
+        espaceGrande += quantite;
+        break;
+    }
+    return;
+  }
 
   produits[nombreProduits++] = nouveauProduit;
 }
@@ -152,35 +179,21 @@ void augmenterStock(Produit *produit, int quantite) {
 
   int espaceRequis;
   switch (produit->taille) {
-  case PETITE:
-    espaceRequis = quantite;
-    break;
-  case MOYENNE:
-    espaceRequis = 2 * quantite;
-    break;
-  case GRANDE:
-    espaceRequis = 4 * quantite;
-    break;
+    case PETITE:
+      espaceRequis = quantite;
+      break;
+    case MOYENNE:
+      espaceRequis = 2 * quantite;
+      break;
+    case GRANDE:
+      espaceRequis = 4 * quantite;
+      break;
+    default:
+      printf("Taille de produit invalide.\n");
+      return;
   }
 
-  int espaceDisponible = 0;
-  int i;
-  for (i = 0; i < nombreProduits; i++) {
-    if (produits[i].quantiteEnStock > 0) {
-      switch (produits[i].taille) {
-      case PETITE:
-        espaceDisponible++;
-        break;
-      case MOYENNE:
-        espaceDisponible += 2;
-        break;
-      case GRANDE:
-        espaceDisponible += 4;
-        break;
-      }
-    }
-  }
-
+  int espaceDisponible = 50 - (espacePetite + (2 * espaceMoyenne) + (4 * espaceGrande));
   if (espaceDisponible + espaceRequis > MAX_PRODUCTS) {
     printf("Impossible d'augmenter le stock. Capacité de stockage atteinte.\n");
     return;
@@ -188,6 +201,19 @@ void augmenterStock(Produit *produit, int quantite) {
 
   if (produit->quantiteEnStock + quantite >= 0) {
     produit->quantiteEnStock += quantite;
+
+    switch (produit->taille) {
+      case PETITE:
+        espacePetite += quantite;
+        break;
+      case MOYENNE:
+        espaceMoyenne += quantite;
+        break;
+      case GRANDE:
+        espaceGrande += quantite;
+        break;
+    }
+
     printf("Stock augmenté avec succès.\n");
   } else {
     printf("Quantité de stock invalide.\n");
@@ -227,6 +253,7 @@ void ajouterClient(char *prenom, char *nom) {
 
   clients[nombreClients++] = nouveauClient;
 
+  totalAchats = 0.0;  // Reset totalAchats for new client
   printf("Client ajouté avec succès. :) \n");
 
   // Création du fichier de sauvegarde du client
@@ -238,6 +265,7 @@ void ajouterClient(char *prenom, char *nom) {
   if (fichier != NULL) {
     fprintf(fichier, "Prénom : %s\n", prenom);
     fprintf(fichier, "Nom : %s\n", nom);
+    fprintf(fichier, "Total des achats : %.2f\n", totalAchats);  // write totalAchats to file
     fclose(fichier);
     printf("Fiche client sauvegardée avec succès.\n");
   } else {
@@ -258,7 +286,7 @@ void supprimerClient(Client *client) {
 
       // Suppression du fichier client
       char nomFichier[MAX_NAME_LENGTH * 2 +
-                      5]; // Nom du fichier au format "prenom_nom.txt"
+                      5];  // Nom du fichier au format "prenom_nom.txt"
       snprintf(nomFichier, sizeof(nomFichier), "%s_%s.txt", client->prenom,
                client->nom);
 
@@ -281,39 +309,49 @@ void effectuerAchat(Client *client, Produit *produit, int quantite) {
 
   if (produit->quantiteEnStock >= quantite) {
     float prixTotal = produit->prix * quantite;
-    printf("Produit(s) acheté(s) : %s, Quantité : %d, Prix unitaire : %.2f, "
-           "Prix total : %.2f\n",
+    printf("Produit(s) acheté(s) : %s, Quantité : %d, Prix unitaire : %.2f, Prix total : %.2f\n",
            produit->nom, quantite, produit->prix, prixTotal);
     produit->quantiteEnStock -= quantite;
 
     if (client != NULL) {
       if (client->longueurHistorique < MAX_HISTORY_LENGTH) {
-        client->historiqueAchats[client->longueurHistorique++] =
-            produit->numeroReference;
+        client->historiqueAchats[client->longueurHistorique++] = produit->numeroReference;
       } else {
         int i;
         for (i = 0; i < MAX_HISTORY_LENGTH - 1; i++) {
           client->historiqueAchats[i] = client->historiqueAchats[i + 1];
         }
-        client->historiqueAchats[MAX_HISTORY_LENGTH - 1] =
-            produit->numeroReference;
+        client->historiqueAchats[MAX_HISTORY_LENGTH - 1] = produit->numeroReference;
       }
 
-      // Mise à jour du fichier client
+      totalAchats += prixTotal;  // Add the total price to the total purchases
+
+      // Update the client file
       char nomFichier[MAX_NAME_LENGTH * 2 + 5];
-      snprintf(nomFichier, sizeof(nomFichier), "%s_%s.txt", client->prenom,
-               client->nom);
+      snprintf(nomFichier, sizeof(nomFichier), "%s_%s.txt", client->prenom, client->nom);
 
       FILE *fichier = fopen(nomFichier, "a");
       if (fichier != NULL) {
-        fprintf(fichier,
-                "Achat : %s, Quantité : %d, Prix unitaire : %.2f, Prix total : "
-                "%.2f\n",
+        fprintf(fichier, "Achat : %s, Quantité : %d, Prix unitaire : %.2f, Prix total : %.2f\n",
                 produit->nom, quantite, produit->prix, prixTotal);
+        fprintf(fichier, "Total des achats : %.2f\n", totalAchats);
         fclose(fichier);
       } else {
         printf("Erreur lors de la mise à jour du fichier client.\n");
       }
+    }
+
+    // Update the remaining stock and used space
+    switch (produit->taille) {
+      case PETITE:
+        espacePetite -= quantite;
+        break;
+      case MOYENNE:
+        espaceMoyenne -= quantite;
+        break;
+      case GRANDE:
+        espaceGrande -= quantite;
+        break;
     }
   } else {
     printf("Stock insuffisant pour l'achat de %d produit(s).\n", quantite);
@@ -328,13 +366,15 @@ void effectuerAchat(Client *client, Produit *produit, int quantite) {
     }
   }
 }
+
 void viderBuffer() {
   int c;
   while ((c = getchar()) != '\n' && c != EOF)
     ;
 }
+
 int main() {
-  // Ajout des produits initiaux
+  // Adding initial products
   ajouterProduit("Chaussure", 1, 5, 29.99, MOYENNE);
   ajouterProduit("Pantalon", 2, 3, 39.99, GRANDE);
   ajouterProduit("T-shirt", 3, 10, 19.99, PETITE);
@@ -356,187 +396,139 @@ int main() {
     viderBuffer();
 
     switch (mode) {
-    case 1:
-      afficherProduitsFaibleStock();
-      afficherProduitsStockEpuise();
-      afficherEspaceRestant();
-
-      int choixGestion;
-      printf("-> Mode Gestion :\n");
-      printf("1. Vérifier le stock d'un produit\n");
-      printf("2. Augmenter le stock d'un produit\n");
-      printf("0. Quitter\n");
-      printf("Entrez votre choix : ");
-      scanf("%d", &choixGestion);
-      viderBuffer();
-
-      switch (choixGestion) {
       case 1:
-        printf("Entrez le nom ou la référence du produit : ");
-        char rechercheNom[MAX_NAME_LENGTH];
-        fgets(rechercheNom, sizeof(rechercheNom), stdin);
-        rechercheNom[strcspn(rechercheNom, "\n")] = '\0';
-        int rechercheReference;
-        if (sscanf(rechercheNom, "%d", &rechercheReference) == 1) {
-          Produit *produitTrouve =
-              trouverProduitParReference(rechercheReference);
-          if (produitTrouve != NULL) {
-            printf("Produit trouvé :\n");
-            printf("Nom : %s, Référence : %d, Quantité : %d, Prix : %.2f, "
-                   "Taille : ",
-                   produitTrouve->nom, produitTrouve->numeroReference,
-                   produitTrouve->quantiteEnStock, produitTrouve->prix);
-            switch (produitTrouve->taille) {
-            case PETITE:
-              printf("Petite");
-              break;
-            case MOYENNE:
-              printf("Moyenne");
-              break;
-            case GRANDE:
-              printf("Grande");
-              break;
-            }
-            printf("\n");
-          } else {
-            printf("Aucun produit trouvé avec cette référence.\n");
-          }
-        } else {
-          Produit *produitTrouve = trouverProduitParNom(rechercheNom);
-          if (produitTrouve != NULL) {
-            printf("Produit trouvé :\n");
-            printf("Nom : %s, Référence : %d, Quantité : %d, Prix : %.2f, "
-                   "Taille : ",
-                   produitTrouve->nom, produitTrouve->numeroReference,
-                   produitTrouve->quantiteEnStock, produitTrouve->prix);
-            switch (produitTrouve->taille) {
-            case PETITE:
-              printf("Petite");
-              break;
-            case MOYENNE:
-              printf("Moyenne");
-              break;
-            case GRANDE:
-              printf("Grande");
-              break;
-            }
-            printf("\n");
-          } else {
-            printf("Aucun produit trouvé avec ce nom.\n");
-          }
-        }
-        break;
+        afficherProduitsFaibleStock();
+        afficherProduitsStockEpuise();
+        afficherEspaceRestant();
 
-      case 2:
-        printf("Entrez le nom ou la référence du produit : ");
-        char ajoutNom[MAX_NAME_LENGTH];
-        int ajoutReference;
-        scanf("%s", ajoutNom);
+        int choixGestion;
+        printf("-> Mode Gestion :\n");
+        printf("1. Vérifier le stock d'un produit\n");
+        printf("2. Augmenter le stock d'un produit\n");
+        printf("0. Quitter\n");
+        printf("Entrez votre choix : ");
+        scanf("%d", &choixGestion);
         viderBuffer();
 
-        if (sscanf(ajoutNom, "%d", &ajoutReference) == 1) {
-          Produit *produitAAugmenter =
-              trouverProduitParReference(ajoutReference);
-          if (produitAAugmenter != NULL) {
-            int quantiteAAjouter;
+        switch (choixGestion) {
+          case 1:
+            printf("Entrez le nom ou la référence du produit : ");
+            char rechercheNom[MAX_NAME_LENGTH];
+            fgets(rechercheNom, sizeof(rechercheNom), stdin);
+            rechercheNom[strcspn(rechercheNom, "\n")] = '\0';
+            int rechercheReference;
+            if (sscanf(rechercheNom, "%d", &rechercheReference) == 1) {
+              Produit *produitTrouve = trouverProduitParReference(rechercheReference);
+              if (produitTrouve != NULL) {
+                printf("Produit trouvé : %s, Quantité en stock : %d\n",
+                       produitTrouve->nom, produitTrouve->quantiteEnStock);
+              } else {
+                printf("Aucun produit trouvé.\n");
+              }
+            } else {
+              Produit *produitTrouve = trouverProduitParNom(rechercheNom);
+              if (produitTrouve != NULL) {
+                printf("Produit trouvé : %s, Quantité en stock : %d\n",
+                       produitTrouve->nom, produitTrouve->quantiteEnStock);
+              } else {
+                printf("Aucun produit trouvé.\n");
+              }
+            }
+            break;
+          case 2:
+            printf("Entrez la référence du produit : ");
+            int referenceProduit;
+            scanf("%d", &referenceProduit);
             printf("Entrez la quantité à ajouter : ");
+            int quantiteAAjouter;
             scanf("%d", &quantiteAAjouter);
             viderBuffer();
+
+            Produit *produitAAugmenter = trouverProduitParReference(referenceProduit);
             augmenterStock(produitAAugmenter, quantiteAAjouter);
-          } else {
-            printf("Aucun produit trouvé avec cette référence.\n");
-          }
-        } else {
-          Produit *produitAAugmenter = trouverProduitParNom(ajoutNom);
-          if (produitAAugmenter != NULL) {
-            int quantiteAAjouter;
-            printf("Entrez la quantité à ajouter : ");
-            scanf("%d", &quantiteAAjouter);
-            viderBuffer();
-            augmenterStock(produitAAugmenter, quantiteAAjouter);
-          } else {
-            printf("Aucun produit trouvé avec ce nom.\n");
-          }
+            break;
+          case 0:
+            break;
+          default:
+            printf("Choix invalide.\n");
+            break;
+        }
+        if (choixGestion == 0) {
+          break;
         }
         break;
+      case 2:
+        printf("-> Mode Achat :\n");
+        printf("Entrez votre prénom : ");
+        char prenom[MAX_NAME_LENGTH];
+        fgets(prenom, sizeof(prenom), stdin);
+        prenom[strcspn(prenom, "\n")] = '\0';
+        printf("Entrez votre nom : ");
+        char nom[MAX_NAME_LENGTH];
+        fgets(nom, sizeof(nom), stdin);
+        nom[strcspn(nom, "\n")] = '\0';
 
-      case 0:
+        Client *clientActuel = trouverClientParNom(prenom, nom);
+        if (clientActuel == NULL) {
+          printf("Client non trouvé. Voulez-vous créer un compte ? (1: Oui, 0: Non) : ");
+          int choixCreationCompte;
+          scanf("%d", &choixCreationCompte);
+          viderBuffer();
+          if (choixCreationCompte == 1) {
+            ajouterClient(prenom, nom);
+            clientActuel = trouverClientParNom(prenom, nom);
+          }
+        }
+
+        if (clientActuel != NULL) {
+          int choixAchat;
+          printf("1. Acheter un produit\n");
+          printf("2. Afficher l'historique des achats\n");
+          printf("0. Quitter\n");
+          printf("Entrez votre choix : ");
+          scanf("%d", &choixAchat);
+          viderBuffer();
+
+          switch (choixAchat) {
+            case 1:
+              while (1) {
+                printf("Entrez la référence du produit que vous souhaitez acheter (0 pour quitter) : ");
+                int referenceProduit;
+                scanf("%d", &referenceProduit);
+                viderBuffer();
+                if (referenceProduit == 0) {
+                  printf("Total des achats : %.2f\n", totalAchats);
+                  break;
+                }
+                printf("Entrez la quantité que vous souhaitez acheter : ");
+                int quantiteAchat;
+                scanf("%d", &quantiteAchat);
+                viderBuffer();
+                Produit *produitAAcheter = trouverProduitParReference(referenceProduit);
+                effectuerAchat(clientActuel, produitAAcheter, quantiteAchat);
+              }
+              break;
+            case 2:
+              afficherHistoriqueAchats(clientActuel);
+              break;
+            case 0:
+              printf("Total des achats : %.2f\n", totalAchats);
+              break;
+            default:
+              printf("Choix invalide.\n");
+              break;
+          }
+        } else {
+          printf("Opération annulée. Client non trouvé.\n");
+        }
         break;
-
+      case 0:
+        printf("Total des achats : %.2f\n", totalAchats);
+        printf("Merci d'avoir utilisé le Programme de Gestion de Magasin. Au revoir !\n");
+        return 0;
       default:
         printf("Choix invalide.\n");
         break;
-      }
-
-      if (choixGestion == 0) {
-        break;
-      }
-      break;
-
-    case 2:
-      printf("-> Mode Achat :\n");
-
-      printf("Êtes-vous un client enregistré ? (1: Oui, 0: Non) : ");
-      int choixClient;
-      scanf("%d", &choixClient);
-      viderBuffer();
-
-      if (choixClient == 1) {
-        char prenomClient[MAX_NAME_LENGTH], nomClient[MAX_NAME_LENGTH];
-        printf("Entrez votre prénom : ");
-        scanf("%s", prenomClient);
-        viderBuffer();
-        printf("Entrez votre nom : ");
-        scanf("%s", nomClient);
-        viderBuffer();
-
-        Client *client = trouverClientParNom(prenomClient, nomClient);
-        if (client != NULL) {
-          afficherHistoriqueAchats(client);
-
-          int referenceProduit;
-          printf(
-              "Entrez la référence du produit que vous souhaitez acheter : ");
-          scanf("%d", &referenceProduit);
-          
-
-          Produit *produitAcheter =
-              trouverProduitParReference(referenceProduit);
-          if (produitAcheter != NULL) {
-            int quantiteAcheter;
-            printf(
-                "Entrez la quantité du produit que vous souhaitez acheter : ");
-            scanf("%d", &quantiteAcheter);
-            viderBuffer();
-            effectuerAchat(client, produitAcheter, quantiteAcheter);
-          } else {
-            printf("Aucun produit trouvé avec cette référence.\n");
-          }
-        } else {
-          printf("Aucun client trouvé avec ce nom.\n");
-        }
-      } else if (choixClient == 0) {
-        char prenomNouveauClient[MAX_NAME_LENGTH],
-            nomNouveauClient[MAX_NAME_LENGTH];
-        printf("Entrez votre prénom : ");
-        scanf("%s", prenomNouveauClient);
-        printf("Entrez votre nom : ");
-        scanf("%s", nomNouveauClient);
-
-        ajouterClient(prenomNouveauClient, nomNouveauClient);
-      } else {
-        printf("Choix invalide.\n");
-      }
-      break;
-
-    case 0:
-      printf("Merci d'avoir utilisé le Programme de Gestion de Magasin ! Au "
-             "revoir !\n");
-      return 0;
-
-    default:
-      printf("Choix invalide.\n");
-      break;
     }
   }
 
