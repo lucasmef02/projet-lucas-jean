@@ -249,7 +249,7 @@ void afficherHistoriqueAchats(Client *client) {
   printf("Historique des achats :\n");
   int i;
   for (i = 0; i < client->longueurHistorique; i++) {
-    printf("Achat : %d Référence de l'article acheté : %d\n", i + 1, client->historiqueAchats[i]);
+    printf("-Achat : %d\n-Référence de l'article acheté : %d\n", i + 1, client->historiqueAchats[i]);
   }
   printf("\n");
 }
