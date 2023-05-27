@@ -92,9 +92,9 @@ void afficherEspaceRestant() {
   int espaceTotal = 50 - (espacePetite + (2 * espaceMoyenne) + (4 * espaceGrande));
   if (espaceTotal >= 0 && espaceTotal <= 50) {
     printf("Espace total restant dans le magasin : %d sur 50 disponibles\n", espaceTotal);
-  } else if (espaceTotal < 0) {
-    printf("Stock insuffisant");
   } else if (espaceTotal > 50) {
+    printf("Stock insuffisant");
+  } else if (espaceTotal < 0) {
     printf("Stock demandé supérieur à la capacité disponible\n");
   }
 }
@@ -213,10 +213,15 @@ void augmenterStock(Produit *produit, int quantite) {
         espaceGrande += quantite;
         break;
     }
-
-    printf("Stock augmenté avec succès.\n");
-  } else {
+    
+    int espaceDisponible = 50 - (espacePetite + (2 * espaceMoyenne) + (4 * espaceGrande));
+    if (espaceDisponible <= 50 && espaceDisponible >= 0){
+      printf("Stock augmenté avec succès.\n");
+    }
+    
+  else {
     printf("Quantité de stock invalide.\n");
+  }
   }
 }
 
@@ -534,3 +539,5 @@ int main() {
 
   return 0;
 }
+
+
