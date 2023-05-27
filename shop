@@ -212,8 +212,8 @@ void augmenterStock(Produit *produit, int quantite) {
 
   int espaceDisponible =
       50 - (espacePetite + (2 * espaceMoyenne) + (4 * espaceGrande));
-  if (espaceDisponible + espaceRequis > 50) {
-    printf("Impossible d'augmenter le stock. Capacité de stockage atteinte.\n");
+  if (espaceDisponible < espaceRequis) {
+    printf("Impossible d'augmenter le stock. Stock insuffisant.\n");
     return;
   }
 
@@ -236,9 +236,7 @@ void augmenterStock(Produit *produit, int quantite) {
         50 - (espacePetite + (2 * espaceMoyenne) + (4 * espaceGrande));
     if (espaceDisponible <= 50 && espaceDisponible >= 0) {
       printf("Stock augmenté avec succès.\n");
-    }
-
-    else {
+    } else {
       printf("Quantité de stock invalide.\n");
     }
   }
@@ -482,30 +480,6 @@ int main() {
           int quantiteAAjouter;
           scanf("%d", &quantiteAAjouter);
           viderBuffer();
-
-          int espaceRequis;
-          switch (produitAAugmenter->taille) {
-          case PETITE:
-            espaceRequis = quantiteAAjouter;
-            break;
-          case MOYENNE:
-            espaceRequis = 2 * quantiteAAjouter;
-            break;
-          case GRANDE:
-            espaceRequis = 4 * quantiteAAjouter;
-            break;
-          default:
-            printf("Taille de produit invalide.\n");
-            return 1;
-          }
-
-          int espaceDisponible =
-              50 - (espacePetite + (2 * espaceMoyenne) + (4 * espaceGrande));
-
-          if (espaceRequis > espaceDisponible) {
-            printf("Impossible d'ajouter la quantité demandée. Stock "
-                   "insuffisant.\n");
-              }
 
           augmenterStock(produitAAugmenter, quantiteAAjouter);
         } else {
